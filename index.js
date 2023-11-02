@@ -1,6 +1,14 @@
 const express = require('express')
+const morgan = require('morgan')
+
+morgan.token('reqBody', function getId(req) {
+    return JSON.stringify(req.body)
+})
+
 const app = express()
-app.use(express.json()) // using json-parser
+
+app.use(express.json())     // using json-parser
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))     // using morgan middleware
 
 let persons = [
     {
@@ -25,10 +33,8 @@ let persons = [
     }
 ]
 
-app.get('/api/persons', (request, response) => {
-    const body = request.body
-
-    response.json(persons)
+app.get('/api/persons', function (req, res) {
+    res.json(persons)
 })
 
 app.get('/info', (request, response) => {
@@ -92,6 +98,12 @@ app.post('/api/persons', (request, response) => {
     persons = persons.concat(person)
     response.json(person)
 })
+
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint) //middleware, will be used for catching requests made to non-existent routes
 
 const PORT = 3001
 app.listen(PORT, () => {
