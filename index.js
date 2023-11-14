@@ -1,5 +1,6 @@
 const express = require('express')
 const morgan = require('morgan')
+const cors = require('cors')
 
 morgan.token('reqBody', function getId(req) {
     return JSON.stringify(req.body)
@@ -7,6 +8,7 @@ morgan.token('reqBody', function getId(req) {
 
 const app = express()
 
+app.use(cors())
 app.use(express.json())     // using json-parser
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))     // using morgan middleware
 
@@ -59,14 +61,49 @@ app.get('/api/persons/:id', (request, response) => {
 app.delete('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id)
     persons = persons.filter(person => person.id !== id)
-
+    console.log(persons)
     response.status(204).end()
 })
 
-const doesExist = (name) => {
-    const foundPerson = persons.find((person) => person.name === name)
+const doesExist = (parameter, value) => {
+    const foundPerson = persons.find((person) => person[parameter] === value)
+    console.log(`Was there any matching person found: ${JSON.stringify(foundPerson)}`)
     return foundPerson ? true : false
 }
+
+app.put('/api/persons/:id', (request, response) => {
+    const body = request.body
+    const id = Number(request.params.id)
+
+    if (doesExist("id", body.id) === false) {
+        return response.status(400).json({
+            error: `Person with ID=${id} doesn't exist.`
+        })
+    }
+    if (!body.name) {
+        return response.status(400).json({
+            error: "Missing person's name."
+        })
+    }
+    if (!body.number) {
+        return response.status(400).json({
+            error: "Missing person's number."
+        })
+    }
+
+    const newPerson = {
+        id: id,
+        name: body.name,
+        number: body.number
+    }
+
+    persons = persons.map(person => person.id == id
+        ? person = newPerson
+        : person = person)
+
+    console.log(persons)
+    response.json(newPerson)
+})
 
 app.post('/api/persons', (request, response) => {
     const body = request.body
@@ -77,7 +114,7 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    if (doesExist(body.name)) {
+    if (doesExist("name", body.name)) {
         return response.status(400).json({
             error: "Name must be unique."
         })

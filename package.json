@@ -12,13 +12,14 @@
     "type": "git",
     "url": "git+https://github.com/sonata22/FullStack_part3.git"
   },
-  "author": "Nataliia Sosnovshchenko",
+  "author": "sonata22",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/sonata22/FullStack_part3/issues"
   },
   "homepage": "https://github.com/sonata22/FullStack_part3#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "morgan": "^1.10.0"
   },

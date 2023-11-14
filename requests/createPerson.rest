@@ -5,3 +5,12 @@ content-type: application/json
     "name": "Finally it works",
     "number": "8-800-555-35-35"
 }
+
+###
+PUT http://localhost:3001/api/persons/1
+content-type: application/json
+
+{
+    "name": "Arto Hellas",
+    "number": "111"
+}
