@@ -9,6 +9,7 @@ morgan.token('reqBody', function getId(req) {
 const app = express()
 
 app.use(cors())
+app.use(express.static('dist'))
 app.use(express.json())     // using json-parser
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))     // using morgan middleware
 
@@ -142,7 +143,7 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint) //middleware, will be used for catching requests made to non-existent routes
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
