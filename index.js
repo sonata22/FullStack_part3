@@ -1,6 +1,11 @@
+// taking .env variables into use, important to use it before Person model is imported
+// This ensures that the environment variables from the .env file are available globally
+// before the code from the other modules is imported.
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 
 morgan.token('reqBody', function getId(req) {
     return JSON.stringify(req.body)
@@ -37,7 +42,9 @@ let persons = [
 ]
 
 app.get('/api/persons', function (req, res) {
-    res.json(persons)
+    Person.find({}).then(persons => {
+        res.json(persons)
+    })
 })
 
 app.get('/info', (request, response) => {
@@ -141,7 +148,7 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint) //middleware, will be used for catching requests made to non-existent routes
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
