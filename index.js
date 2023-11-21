@@ -53,10 +53,24 @@ app.get('/info', (request, response) => {
     response.send(`<p>Phonebook has info for ${personsTotalNum} people<br/><br/>${currentDate}</p>`)
 })
 
-app.get('/api/persons/:id', (request, response) => {
-    Person.findById(request.params.id).then(person => {
-        response.json(person)
-    })
+app.get('/api/persons/:id', (request, response, next) => {
+    Person
+        .findById(request.params.id)
+        .then(person => {
+            if (person) {
+                response.json(person)
+            } else { //executed if no object is found (object is null)
+                response.status(404).end()
+            }
+        })
+        .catch(error => { // executed if returned promise is rejected
+            console.log(`LOG: ${error}`)
+            response.status(400).send({
+                error: 'Malformed person ID.',
+                errorMessage: error.message,
+                errorBody: error,
+            })
+        })
 })
 
 app.delete('/api/persons/:id', (request, response) => {

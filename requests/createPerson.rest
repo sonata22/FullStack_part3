@@ -14,3 +14,7 @@ content-type: application/json
     "name": "Arto Hellas",
     "number": "111"
 }
+
+###
+GET http://localhost:3001/api/persons/someInvalidId
+content-type: application/json
