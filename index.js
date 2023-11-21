@@ -54,16 +54,9 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response) => {
-    console.log(request.headers)
-    console.log(request.get)
-    const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
-
-    if (person) {
+    Person.findById(request.params.id).then(person => {
         response.json(person)
-    } else {
-        response.status(404).end()
-    }
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -132,14 +125,18 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    const person = {
-        id: Math.random(),
+    const person = new Person({
         name: body.name,
         number: body.number
-    }
+    })
 
-    persons = persons.concat(person)
-    response.json(person)
+    person.save()
+        // This ensures that the response is sent only if the operation succeeded
+        .then(savedPerson => {
+            // The data sent back in the response is the formatted version created
+            // automatically with the toJSON method
+            response.json(savedPerson)
+        })
 })
 
 const unknownEndpoint = (request, response) => {
