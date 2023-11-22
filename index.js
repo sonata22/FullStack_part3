@@ -48,12 +48,19 @@ app.get('/api/persons', function (req, res) {
 })
 
 app.get('/info', (request, response) => {
-    const personsTotalNum = persons.length
-    const currentDate = new Date()
-    response.send(`<p>Phonebook has info for ${personsTotalNum} people<br/><br/>${currentDate}</p>`)
+    Person.find({}).then(persons => {
+        const currentDate = new Date()
+        if (persons.length >= 1) {
+            response.send(`<p>Phonebook has info for ${persons.length} people<br/><br/>${currentDate}</p>`)
+        } else {
+            response.send(`There are no entries in the Phonebook yet.<br/><br/>${currentDate}</p>`)
+        }
+    })
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
+    console.log(request.headers)
+    console.log(request.get)
     Person
         .findById(request.params.id)
         .then(person => {
@@ -72,9 +79,15 @@ app.get('/api/persons/:id', (request, response, next) => {
 
 app.delete('/api/persons/:id', (request, response, next) => {
     Person.findByIdAndDelete(request.params.id)
-        .then(result => { // result callback parameter could be used
-            // for checking if a resource was actually deleted
-            response.status(204).end()
+        .then(person => {
+            if (person) {
+                response.status(204).end()
+            } else {
+                return response.status(404)
+                    .json({
+                        error: `Person with ID=${request.params.id} doesn't exist or was already deleted.`
+                    })
+            }
         })
         .catch(error => next(error))
 })
@@ -86,31 +99,46 @@ const doesExist = (parameter, value) => {
 }
 
 app.put('/api/persons/:id', (request, response, next) => {
-    const body = request.body
-
-    // if (!body.name) {
-    //     return response.status(400).json({
-    //         error: "Missing person's name."
-    //     })
-    // }
-    // if (!body.number) {
-    //     return response.status(400).json({
-    //         error: "Missing person's number."
-    //     })
-    // }
-
-    const person = {
-        name: body.name,
-        number: body.number,
-    }
-
     Person
-        .findByIdAndUpdate(
-            request.params.id,
-            person,
-            { new: true }
-        )
-        .then(updatedPerson => response.json(updatedPerson))
+        .findById(request.params.id)
+        .then(person => {
+            if (person) {
+                const body = request.body
+                if (!body.name) {
+                    return response.status(400).json({
+                        error: "Missing person's name."
+                    })
+                }
+                if (!body.number) {
+                    return response.status(400).json({
+                        error: "Missing person's number."
+                    })
+                }
+
+                const person = {
+                    name: body.name,
+                    number: body.number,
+                }
+
+                Person
+                    .findByIdAndUpdate(
+                        request.params.id,
+                        person,
+                        { new: true }
+                    )
+                    .then(updatedPerson => response.json(updatedPerson))
+                    .catch(error => next(error))
+            } else { //executed if no object is found (object is null)
+                return response.status(404)
+                    .json({
+                        error: `Person with ID=${request.params.id} doesn't exist or was already deleted.`
+                    })
+            }
+        })
+        // if no parameter passed to next() then the execution will move to
+        // the next route of middleware
+        // if next() is called with parameter, then execution will continue
+        // to error handler middleware
         .catch(error => next(error))
 })
 

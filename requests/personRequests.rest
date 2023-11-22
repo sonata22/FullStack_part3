@@ -7,14 +7,22 @@ content-type: application/json
 }
 
 ###
-PUT http://localhost:3001/api/persons/1
+PUT http://localhost:3001/api/persons/655e2d176042f03da6981325
 content-type: application/json
 
 {
     "name": "Arto Hellas",
-    "number": "111"
+    "number": "222"
 }
 
 ###
 GET http://localhost:3001/api/persons/someInvalidId
 content-type: application/json
+
+### Delete a person
+DELETE http://localhost:3001/api/persons/655e2ea2cc2ed726a773d31a
+Content-Type: application/json
+
+###
+GET http://localhost:3001/info
+Content-type: application/json
