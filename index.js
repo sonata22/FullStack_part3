@@ -15,7 +15,7 @@ const app = express()
 
 app.use(cors())
 app.use(express.static('dist'))
-app.use(express.json())     // using json-parser
+app.use(express.json())     // using json-parser (should be one of the first loaded into Express)
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))     // using morgan middleware
 
 let persons = [
@@ -63,21 +63,20 @@ app.get('/api/persons/:id', (request, response, next) => {
                 response.status(404).end()
             }
         })
-        .catch(error => { // executed if returned promise is rejected
-            console.log(`LOG: ${error}`)
-            response.status(400).send({
-                error: 'Malformed person ID.',
-                errorMessage: error.message,
-                errorBody: error,
-            })
-        })
+        // if no parameter passed to next() then the execution will move to
+        // the next route of middleware
+        // if next() is called with parameter, then execution will continue
+        // to error handler middleware
+        .catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    persons = persons.filter(person => person.id !== id)
-    console.log(persons)
-    response.status(204).end()
+app.delete('/api/persons/:id', (request, response, next) => {
+    Person.findByIdAndDelete(request.params.id)
+        .then(result => { // result callback parameter could be used
+            // for checking if a resource was actually deleted
+            response.status(204).end()
+        })
+        .catch(error => next(error))
 })
 
 const doesExist = (parameter, value) => {
@@ -86,38 +85,33 @@ const doesExist = (parameter, value) => {
     return foundPerson ? true : false
 }
 
-app.put('/api/persons/:id', (request, response) => {
+app.put('/api/persons/:id', (request, response, next) => {
     const body = request.body
-    const id = Number(request.params.id)
 
-    if (doesExist("id", body.id) === false) {
-        return response.status(400).json({
-            error: `Person with ID=${id} doesn't exist.`
-        })
-    }
-    if (!body.name) {
-        return response.status(400).json({
-            error: "Missing person's name."
-        })
-    }
-    if (!body.number) {
-        return response.status(400).json({
-            error: "Missing person's number."
-        })
-    }
+    // if (!body.name) {
+    //     return response.status(400).json({
+    //         error: "Missing person's name."
+    //     })
+    // }
+    // if (!body.number) {
+    //     return response.status(400).json({
+    //         error: "Missing person's number."
+    //     })
+    // }
 
-    const newPerson = {
-        id: id,
+    const person = {
         name: body.name,
-        number: body.number
+        number: body.number,
     }
 
-    persons = persons.map(person => person.id == id
-        ? person = newPerson
-        : person = person)
-
-    console.log(persons)
-    response.json(newPerson)
+    Person
+        .findByIdAndUpdate(
+            request.params.id,
+            person,
+            { new: true }
+        )
+        .then(updatedPerson => response.json(updatedPerson))
+        .catch(error => next(error))
 })
 
 app.post('/api/persons', (request, response) => {
@@ -158,6 +152,25 @@ const unknownEndpoint = (request, response) => {
 }
 
 app.use(unknownEndpoint) //middleware, will be used for catching requests made to non-existent routes
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    //in all other error situations, middlware passes error forward
+    // to default Express error handler
+    if (error.name === 'CastError') {
+        return response.status(400).send({
+            error: 'Malformed ID',
+            errorMessage: error.message,
+            errorBody: error
+        })
+    }
+
+    next(error)
+}
+
+app.use(errorHandler) // has to be the last loaded middleware
+
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
