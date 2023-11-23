@@ -124,7 +124,7 @@ app.put('/api/persons/:id', (request, response, next) => {
                     .findByIdAndUpdate(
                         request.params.id,
                         person,
-                        { new: true }
+                        { new: true, runValidation: true, context: 'query' }
                     )
                     .then(updatedPerson => response.json(updatedPerson))
                     .catch(error => next(error))
@@ -142,10 +142,10 @@ app.put('/api/persons/:id', (request, response, next) => {
         .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
     const body = request.body
 
-    if (!body.name) {
+    if (!body.name) { // equal to (body.name === undefined)
         return response.status(400).json({
             error: "Missing person's name."
         })
@@ -173,6 +173,7 @@ app.post('/api/persons', (request, response) => {
             // automatically with the toJSON method
             response.json(savedPerson)
         })
+        .catch(error => next(error))
 })
 
 const unknownEndpoint = (request, response) => {
@@ -192,6 +193,8 @@ const errorHandler = (error, request, response, next) => {
             errorMessage: error.message,
             errorBody: error
         })
+    } else if (error.name === 'ValidationError') {
+        return response.status(400).json({ error: error.message })
     }
 
     next(error)
